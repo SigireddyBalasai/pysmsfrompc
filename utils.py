@@ -1,8 +1,5 @@
 import selenium.webdriver as wd
 from selenium.webdriver.common.by import By
-from PIL import Image,ImageOps
-from pyzbar.pyzbar import decode
-import io
 import time
 
 DRIVERS = {

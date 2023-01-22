@@ -15,6 +15,7 @@ DRIVERS = {
 #Options headless broswer
 CHROMEOPTIONS = wd.ChromeOptions()
 CHROMEOPTIONS.headless=True
+# CHROMEOPTIONS.add_experimental_option("debuggerAddres","localhost:8989")
 FIREFOXOPTIONS = wd.FirefoxOptions()
 FIREFOXOPTIONS.headless = True
 SAFARIOPTIONS = wd.FirefoxOptions()
@@ -42,9 +43,9 @@ class TimeOutConnectionException(Exception):
 
 # functions
 
-def create_driver(brosware_name:str,open_head:bool) -> wd.Chrome:
+def create_driver(brosware_name:str,headless:bool) -> wd.Chrome:
 	try:
-		if not open_head:
+		if headless:
 			driver = DRIVERS[brosware_name.lower()](options = OPTIONS[brosware_name.lower()])
 			return driver
 		driver = DRIVERS[brosware_name.lower()](options = OPTIONS["headyes"])
@@ -53,7 +54,7 @@ def create_driver(brosware_name:str,open_head:bool) -> wd.Chrome:
 	return driver
 
 
-def get_qrimage(driver:wd.Chrome) -> list([Image,bytes]):
+def get_qrlogin(driver:wd.Chrome,keep_logged) -> bool:
 	'''
 		The function return the qrcode image in PIL format and \n
 		the bytes massege inside the qr code
@@ -63,15 +64,41 @@ def get_qrimage(driver:wd.Chrome) -> list([Image,bytes]):
 		element = driver.find_elements(By.CLASS_NAME,"bigger-qr-code")
 		if time.time() - start > 10:
 			raise TimeOutConnectionException()
-	qrcode  = Image.open(io.BytesIO(element[0].screenshot_as_png))
-	data = decode(qrcode)
-	if data:
-		data = data[0]
-		qrcode = qrcode.crop((data.rect.left,
-								data.rect.top,
-								data.rect.width+data.rect.left,
-								data.rect.height+data.rect.top))
-		qrcode = ImageOps.equalize(ImageOps.grayscale(qrcode))
-		qrcode = ImageOps.expand(qrcode,border=50,fill="white")
-		return qrcode,data.data
-	return None,None
+	if keep_logged:
+		button = driver.find_element(By.ID,"mat-mdc-slide-toggle-1-button").click()
+	while not "conversations" in driver.current_url:
+		time.sleep(0.5)
+	return True
+
+
+def send_message_to(driver:wd.Chrome,number:str,message:str):
+	input_number,input_message = [],[]
+	start = time.time()
+	while len(input_number) == 0:
+		input_number = driver.find_elements(By.CLASS_NAME,"input")
+		if time.time() - start > 10:
+			raise TimeOutConnectionException()
+	input_number[0].send_keys(number)
+	button = driver.find_elements(By.CLASS_NAME,"button")
+	isclicked = False
+	while not isclicked:
+		#TODO: how to better handle this
+		try:
+			button[0].click()
+			isclicked = True
+		except:
+			pass
+	start = time.time()
+	while len(input_message) == 0:
+		input_message = driver.find_elements(By.CLASS_NAME,"input-box")
+		if time.time() - start > 10:
+			raise TimeOutConnectionException()
+	print(input_message)
+	input_message = input_message[0].find_elements(By.CLASS_NAME,"input")
+	input_message[1].send_keys(message)
+	time.sleep(1)
+	send_button = driver.find_elements(By.CLASS_NAME,"send-button")
+	send_button[1].click()
+	return True
+	
+

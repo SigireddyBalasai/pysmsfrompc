@@ -26,7 +26,7 @@ def send_message(broswer:str = "Chrome",
     driver.get("https://messages.google.com/web/conversations/new")
     state = send_message_to(driver,number,message)
     if state:
-        print("Messaggio inviato correttamente")
+        print("Message sent correctly")
     
 
 

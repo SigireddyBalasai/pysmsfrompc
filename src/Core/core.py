@@ -1,9 +1,8 @@
 import selenium.webdriver as wd
 from selenium.webdriver.common.by import By
-from PIL import Image,ImageOps
-from pyzbar.pyzbar import decode
-import io
 import time
+from .exceptions import *
+import os
 
 DRIVERS = {
     "chrome": (lambda options: wd.Chrome(options=options)),
@@ -31,16 +30,6 @@ OPTIONS ={
 	"headyes": None
 }
 
-# Custom Exceptions
-
-class BrowserException(Exception):
-	def __init__(self):
-		super(BrowserException,self).__init__("Only [Chrome, Firefox, Safari, Edge] are supported")	
-
-class TimeOutConnectionException(Exception):
-	def __init__(self):
-		super(TimeOutConnectionException,self).__init__("Verify your internet connection")		
-
 # functions
 
 def create_driver(brosware_name:str,headless:bool) -> wd.Chrome:
@@ -53,6 +42,13 @@ def create_driver(brosware_name:str,headless:bool) -> wd.Chrome:
 		raise(BrowserException())
 	return driver
 
+def click_to_send(driver: wd.Chrome) -> bool:
+	try:
+		send_button = driver.find_element(By.CSS_SELECTOR,"[data-e2e-send-text-button]")
+		send_button.click()
+		return True
+	except:
+		return False
 
 def get_qrlogin(driver:wd.Chrome,keep_logged) -> bool:
 	'''
@@ -70,9 +66,8 @@ def get_qrlogin(driver:wd.Chrome,keep_logged) -> bool:
 		time.sleep(0.5)
 	return True
 
-
-def send_message_to(driver:wd.Chrome,number:str,message:str):
-	input_number,input_message = [],[]
+def select_chat(driver:wd.Chrome,number:str) -> bool:
+	input_number= []
 	start = time.time()
 	while len(input_number) == 0:
 		input_number = driver.find_elements(By.CLASS_NAME,"input")
@@ -88,17 +83,40 @@ def send_message_to(driver:wd.Chrome,number:str,message:str):
 			isclicked = True
 		except:
 			pass
+	return True
+
+def send_message_to(driver:wd.Chrome,number:str,message:str) -> bool:
+	
+	state = select_chat(driver,number)
+	input_message = []
 	start = time.time()
 	while len(input_message) == 0:
 		input_message = driver.find_elements(By.CLASS_NAME,"input-box")
 		if time.time() - start > 10:
 			raise TimeOutConnectionException()
-	print(input_message)
 	input_message = input_message[0].find_elements(By.CLASS_NAME,"input")
 	input_message[1].send_keys(message)
 	time.sleep(1)
-	send_button = driver.find_elements(By.CLASS_NAME,"send-button")
-	send_button[1].click()
-	return True
+	state = click_to_send(driver)
+	return state
+
+def send_hattacment_to(driver:wd.Chrome,number:str,path:str)-> bool:
+	
+	state = select_chat(driver,number)
+	
+	input_attachment = []
+	start = time.time()
+	while len(input_attachment) == 0:
+		input_attachment = driver.find_elements(By.CSS_SELECTOR,"[data-e2e-picker-button=ATTACHMENT]")
+		if time.time() - start > 10:
+			raise TimeOutConnectionException()
+	time.sleep(3)
+	#TODO:
+	# implement the execution of uploading
+	time.sleep(1)
+	state = click_to_send()
+	return state
+
+
 	
 

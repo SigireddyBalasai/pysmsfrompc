@@ -44,8 +44,10 @@ def create_driver(brosware_name:str,headless:bool) -> wd.Chrome:
 
 def click_to_send(driver: wd.Chrome) -> bool:
 	try:
-		send_button = driver.find_element(By.CSS_SELECTOR,"[data-e2e-send-text-button]")
-		send_button.click()
+		send_button = driver.find_elements(By.CSS_SELECTOR,"[data-e2e-send-text-button]")
+		for button in send_button:
+			if button.aria_role == "button":
+				button.click()
 		return True
 	except:
 		return False
